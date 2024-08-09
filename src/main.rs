@@ -25,11 +25,11 @@ struct Args {
     #[arg(long, default_value_t = true)]
     encrypt: std::primitive::bool,
 
-    // Password request text.
+    /// Password request text.
     #[arg(long, default_value = "Enter the password to view the page")]
     message: String,
 
-    // Title of the password request page.
+    /// Title of the password request page.
     #[arg(long, default_value = "My webpage")]
     title: String,
 }

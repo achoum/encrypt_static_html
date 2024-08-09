@@ -41,9 +41,8 @@ fn embede_html_content(src: &str) -> String {
 
     {
         let selector = Selector::parse(r#"script[src]"#).unwrap();
-        for _ in document.select(&selector) {
+        if document.select(&selector).next().is_some() {
             eprintln!("Script found. Note that scripts are not embedded.");
-            break;
         }
     }
 
@@ -63,7 +62,7 @@ fn embede_html_content(src: &str) -> String {
         }
     }
 
-    return src_content;
+    src_content
 }
 
 pub fn encrypt_html(
@@ -120,7 +119,7 @@ fn encrypt_aes_256_gcm(password: &str, plaintext: &str) -> (Vec<u8>, Vec<u8>, Ve
 
     // Create the cipher
     let key = Key::<Aes256Gcm>::from_slice(&key);
-    let cipher = Aes256Gcm::new(&key);
+    let cipher = Aes256Gcm::new(key);
     let nonce = Aes256Gcm::generate_nonce(&mut OsRng);
     let ciphertext = cipher.encrypt(&nonce, plaintext.as_bytes()).unwrap();
 

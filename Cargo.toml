@@ -3,7 +3,7 @@ name = "encrypt_static_html"
 version = "0.1.0"
 authors = ["Mathieu Guillame-Bert <achoum@gmail.com>"]
 edition = "2021"
-description = "A tool for encrypting a static HTML page, including its images, CSS, and JavaScript, allowing for the page to be hosted securely on a static web server."
+description = "A tool for encrypting a static HTML page, including its images and CSS, allowing for the page to be hosted securely on a static web server."
 license = "Apache-2.0"
 repository = "https://github.com/achoum/encrypt_static_html"
 
