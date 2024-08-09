@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html>
+<title>{{title}}</title>
+<script>
+
+    async function getKeyFromPassword(password, salt) {
+        const enc = new TextEncoder();
+        const keyMaterial = await crypto.subtle.importKey(
+            "raw",
+            enc.encode(password),
+            { name: "PBKDF2" },
+            false,
+            ["deriveKey"]
+        );
+
+        return crypto.subtle.deriveKey(
+            {
+                name: "PBKDF2",
+                salt: salt,
+                iterations: 100000,
+                hash: "SHA-256"
+            },
+            keyMaterial,
+            { name: "AES-GCM", length: 256 },
+            false,
+            ["decrypt"]
+        );
+    }
+
+    function hexStringToUint8Array(hexString) {
+        const result = new Uint8Array(hexString.length / 2);
+        for (let i = 0; i < hexString.length; i += 2) {
+            result[i / 2] = parseInt(hexString.substr(i, 2), 16);
+        }
+        return result;
+    }
+
+    async function decryptAes256Gcm(password, saltHex, nonceHex, ciphertextHex) {
+        const enc = new TextEncoder();
+        const dec = new TextDecoder();
+        const salt = hexStringToUint8Array(saltHex, 'hex');
+        const nonce = hexStringToUint8Array(nonceHex, 'hex');
+        const ciphertext = hexStringToUint8Array(ciphertextHex, 'hex');
+
+        const key = await getKeyFromPassword(password, salt);
+
+        const decrypted = await crypto.subtle.decrypt(
+            {
+                name: "AES-GCM",
+                iv: nonce
+            },
+            key,
+            ciphertext
+        );
+
+        return dec.decode(decrypted);
+    }
+
+    document.addEventListener('DOMContentLoaded', async () => {
+        const password = prompt('{{message}}', '');
+        if (password == null) {
+            document.querySelector('html').innerHTML = "A password is required to view this page.";
+            return;
+        }
+        const saltHex = '{{salt}}';
+        const nonceHex = '{{iv}}';
+        const ciphertextHex = '{{crypted}}';
+
+        try {
+            const plaintext = await decryptAes256Gcm(password, saltHex, nonceHex, ciphertextHex);
+            document.querySelector('html').innerHTML = plaintext;
+        } catch (err) {
+            console.error('Decryption failed:', err);
+            document.querySelector('html').innerHTML = 'The password is incorrect.';
+        }
+    });
+</script>
+
+<body>
+</body>
+
+</html>
