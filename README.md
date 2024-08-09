@@ -4,14 +4,25 @@ A tool for encrypting a static HTML page, including its images and CSS, allowing
 
 ## Usage
 
+Install Rustup at <https://www.rust-lang.org/tools/install> and make sure Cargo's bin is in your PATH. For example, on linux:
+
 ```shell
-# Encrypt the page "index.html" with the password "test".
-> encrypt_static_html --src=index.html --dst=index_encrypted.html --password=test
-# Or, from sources:
-> cargo run -- --src=index.html --dst=index_encrypted.html --password=test
+export PATH=$PATH:/home/$USER/.cargo/bin/
 ```
 
-See `examples/encrypt.{sh,bat}` for a more complete example.
+Then, install and run `encrypt_static_html`.
+
+```shell
+cargo install --git https://github.com/achoum/encrypt_static_html
+```
+
+Given an HTML page `index.html`, encode it with:
+
+```shel
+encrypt_static_html --src=index.html --dst=index_encrypted.html --password=test
+```
+
+**Note:** See `examples` for a full example.
 
 ## Help
 
