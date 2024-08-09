@@ -6,6 +6,8 @@ A tool for encrypting a static HTML page, including its images and CSS, allowing
 
 ```shell
 # Encrypt the page "index.html" with the password "test".
+> encrypt_static_html --src=index.html --dst=index_encrypted.html --password=test
+# Or, from sources:
 > cargo run -- --src=index.html --dst=index_encrypted.html --password=test
 ```
 
