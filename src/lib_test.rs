@@ -14,5 +14,5 @@ fn test_e2e(#[case] embed: bool, #[case] encrypt: bool) {
     let src = tmp_dir.join("src.html");
     let dst = tmp_dir.join("dst.html");
     fs::write(&src, &src_content).unwrap();
-    encrypt_html(&src, "test", &dst, embed, encrypt, "my message", "my title");
+    encrypt_html(&src, "test", &dst, embed, encrypt, "my message", "my title").unwrap();
 }

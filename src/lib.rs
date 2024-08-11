@@ -10,18 +10,19 @@ use rand::{rngs::OsRng, RngCore};
 use scraper::{Html, Selector};
 use serde_json::json;
 use sha2::Sha256;
+use std::error::Error;
 use std::fs;
 use std::path::Path;
 use std::str;
 use url::Url;
 
-fn embede_html_content(src: &str) -> String {
+fn embede_html_content(src: &str, workdir: &Path) -> Result<String, Box<dyn Error>> {
     let mut src_content = String::from(src);
     let document = Html::parse_document(&src_content);
     src_content = document.html();
 
     {
-        let selector = Selector::parse(r#"img[src]"#).unwrap();
+        let selector = Selector::parse(r#"img[src]"#)?;
         for element in document.select(&selector) {
             if let Some(src) = element.value().attr("src") {
                 if Url::parse(src).is_ok() {
@@ -29,7 +30,7 @@ fn embede_html_content(src: &str) -> String {
                     continue;
                 }
                 eprintln!("Embbed local image: {src}");
-                let element_data = std::fs::read(src).unwrap();
+                let element_data = std::fs::read(workdir.join(src))?;
                 let mime_type =
                     infer::get(&element_data).map_or("image/png", |info| info.mime_type());
                 let base64_img = base64::engine::general_purpose::STANDARD.encode(&element_data);
@@ -40,14 +41,14 @@ fn embede_html_content(src: &str) -> String {
     }
 
     {
-        let selector = Selector::parse(r#"script[src]"#).unwrap();
+        let selector = Selector::parse(r#"script[src]"#)?;
         if document.select(&selector).next().is_some() {
             eprintln!("Script found. Note that scripts are not embedded.");
         }
     }
 
     {
-        let selector = Selector::parse(r#"link[rel="stylesheet"]"#).unwrap();
+        let selector = Selector::parse(r#"link[rel="stylesheet"]"#)?;
         for element in document.select(&selector) {
             if let Some(href) = element.value().attr("href") {
                 if Url::parse(href).is_ok() {
@@ -55,14 +56,14 @@ fn embede_html_content(src: &str) -> String {
                     continue;
                 }
                 eprintln!("Embbed local stylesheet: {href}");
-                let element_data = std::fs::read_to_string(href).unwrap();
+                let element_data = std::fs::read_to_string(workdir.join(href))?;
                 let new_tag = format!("<style>{}</style>", element_data);
                 src_content = src_content.replacen(&element.html(), &new_tag, 1);
             }
         }
     }
 
-    src_content
+    Ok(src_content)
 }
 
 pub fn encrypt_html(
@@ -73,36 +74,47 @@ pub fn encrypt_html(
     encrypt: bool,
     message: &str,
     title: &str,
-) {
+) -> Result<(), Box<dyn Error>> {
+    if password.is_empty() {
+        return Err("Password cannot be empty".into());
+    }
+
     // Load content
-    let mut html_content = fs::read_to_string(src).unwrap();
+    let mut html_content = fs::read_to_string(src)?;
 
     if embed {
-        html_content = embede_html_content(&html_content);
+        let workdir = src.parent().unwrap_or_else(|| Path::new(""));
+        html_content = embede_html_content(&html_content, workdir)?;
     }
 
     if encrypt {
-        let (salt, iv, crypted) = encrypt_aes_256_gcm(password, &html_content);
+        let raw_encrypted = encrypt_aes_256_gcm(password, &html_content)?;
 
         let template = include_str!("template.html");
         let reg = Handlebars::new();
-        html_content = reg
-            .render_template(
-                template,
-                &json!({
-                    "salt":hex::encode(&salt),
-                    "iv":hex::encode(&iv),
-                    "crypted":hex::encode(&crypted),
-                    "message":message,
-                    "title":title,
-                }),
-            )
-            .unwrap();
+        html_content = reg.render_template(
+            template,
+            &json!({
+                "salt":hex::encode(&raw_encrypted.salt),
+                "iv":hex::encode(&raw_encrypted.iv),
+                "crypted":hex::encode(&raw_encrypted.ciphertext),
+                "message":message,
+                "title":title,
+            }),
+        )?;
     }
-    fs::write(dst, html_content).unwrap();
+    fs::write(dst, html_content)?;
+
+    Ok(())
 }
 
-fn encrypt_aes_256_gcm(password: &str, plaintext: &str) -> (Vec<u8>, Vec<u8>, Vec<u8>) {
+struct EncryptResult {
+    salt: Vec<u8>,
+    iv: Vec<u8>,
+    ciphertext: Vec<u8>,
+}
+
+fn encrypt_aes_256_gcm(password: &str, plaintext: &str) -> Result<EncryptResult, Box<dyn Error>> {
     const PBKDF2_ITERATIONS: u32 = 100_000;
     const SALT_LEN: usize = 16;
     const KEY_LEN: usize = 32;
@@ -115,15 +127,26 @@ fn encrypt_aes_256_gcm(password: &str, plaintext: &str) -> (Vec<u8>, Vec<u8>, Ve
 
     // Derive the key from the password
     let mut key = [0u8; KEY_LEN];
-    pbkdf2::<Hmac<Sha256>>(password.as_bytes(), &salt, PBKDF2_ITERATIONS, &mut key).unwrap();
+    pbkdf2::<Hmac<Sha256>>(password.as_bytes(), &salt, PBKDF2_ITERATIONS, &mut key)?;
 
     // Create the cipher
     let key = Key::<Aes256Gcm>::from_slice(&key);
     let cipher = Aes256Gcm::new(key);
     let nonce = Aes256Gcm::generate_nonce(&mut OsRng);
-    let ciphertext = cipher.encrypt(&nonce, plaintext.as_bytes()).unwrap();
+    let ciphertext_or = cipher.encrypt(&nonce, plaintext.as_bytes());
+    if let Err(e) = ciphertext_or {
+        return Err(Box::new(std::io::Error::new(
+            std::io::ErrorKind::InvalidData,
+            e.to_string(),
+        )));
+    }
+    let ciphertext = ciphertext_or.unwrap();
 
-    (salt.to_vec(), nonce.to_vec(), ciphertext)
+    Ok(EncryptResult {
+        salt: salt.to_vec(),
+        iv: nonce.to_vec(),
+        ciphertext,
+    })
 }
 
 #[cfg(test)]

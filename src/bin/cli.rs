@@ -36,6 +36,7 @@ struct Args {
 
 fn main() {
     let args = Args::parse();
+
     encrypt_html(
         args.src.as_path(),
         &args.password,
@@ -44,5 +45,6 @@ fn main() {
         args.encrypt,
         &args.message,
         &args.title,
-    );
+    )
+    .unwrap();
 }

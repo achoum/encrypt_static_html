@@ -1,11 +1,20 @@
 [package]
 name = "encrypt_static_html"
-version = "0.1.0"
+version = "0.2.0"
 authors = ["Mathieu Guillame-Bert <achoum@gmail.com>"]
 edition = "2021"
 description = "A tool for encrypting a static HTML page, including its images and CSS, allowing for the page to be hosted securely on a static web server."
 license = "Apache-2.0"
 repository = "https://github.com/achoum/encrypt_static_html"
+default-run = "encrypt_static_html"
+
+[[bin]]
+name = "encrypt_static_html"
+path = "src/bin/cli.rs"
+
+[[bin]]
+name = "encrypt_static_html_ui"
+path = "src/bin/ui.rs"
 
 [dependencies]
 aes = "0.8.4"
@@ -15,6 +24,8 @@ clap = { version = "4.5.13", features = ["derive"] }
 handlebars = "6.0.0"
 hex = "0.4.3"
 hmac = "0.12.1"
+#iced = { git = "https://github.com/iced-rs/iced.git", default-features = false }
+iced = "0.12.1"
 infer = "0.16.0"
 pbkdf2 = "0.12.2"
 rand = "0.8.5"
