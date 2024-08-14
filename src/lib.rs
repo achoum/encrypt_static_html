@@ -2,6 +2,7 @@ use aes_gcm::{
     aead::{Aead, AeadCore, KeyInit},
     Aes256Gcm, Key,
 };
+use anyhow::Context;
 use base64::{self, Engine};
 use handlebars::Handlebars;
 use hmac::Hmac;
@@ -26,11 +27,13 @@ fn embede_html_content(src: &str, workdir: &Path) -> Result<String, Box<dyn Erro
         for element in document.select(&selector) {
             if let Some(src) = element.value().attr("src") {
                 if Url::parse(src).is_ok() {
-                    eprintln!("Don't embbed remote image: {src}");
+                    eprintln!("Skip remote image: {src}");
                     continue;
                 }
                 eprintln!("Embbed local image: {src}");
-                let element_data = std::fs::read(workdir.join(src))?;
+                let path = workdir.join(src);
+                let element_data =
+                    std::fs::read(&path).context(format!("Failed to open {:?}", &path))?;
                 let mime_type =
                     infer::get(&element_data).map_or("image/png", |info| info.mime_type());
                 let base64_img = base64::engine::general_purpose::STANDARD.encode(&element_data);
@@ -42,8 +45,15 @@ fn embede_html_content(src: &str, workdir: &Path) -> Result<String, Box<dyn Erro
 
     {
         let selector = Selector::parse(r#"script[src]"#)?;
-        if document.select(&selector).next().is_some() {
-            eprintln!("Script found. Note that scripts are not embedded.");
+        //if document.select(&selector).next().is_some() {
+        for element in document.select(&selector) {
+            if let Some(src) = element.value().attr("src") {
+                if Url::parse(src).is_ok() {
+                    eprintln!("Don't embbed remote image: {src}");
+                    continue;
+                }
+                eprintln!("Local script found: {src}. Note that scripts are not embedded.");
+            }
         }
     }
 
@@ -52,11 +62,13 @@ fn embede_html_content(src: &str, workdir: &Path) -> Result<String, Box<dyn Erro
         for element in document.select(&selector) {
             if let Some(href) = element.value().attr("href") {
                 if Url::parse(href).is_ok() {
-                    eprintln!("Don't embbed remote stylesheet: {href}");
+                    eprintln!("Skip remote stylesheet: {href}");
                     continue;
                 }
                 eprintln!("Embbed local stylesheet: {href}");
-                let element_data = std::fs::read_to_string(workdir.join(href))?;
+                let path = workdir.join(href);
+                let element_data = std::fs::read_to_string(&path)
+                    .context(format!("Failed to open {:?}", &path))?;
                 let new_tag = format!("<style>{}</style>", element_data);
                 src_content = src_content.replacen(&element.html(), &new_tag, 1);
             }
