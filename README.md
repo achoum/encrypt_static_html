@@ -4,15 +4,23 @@ A tool for encrypting a static HTML page, including its images and CSS, allowing
 
 ## Usage
 
-**Encrypt Static HTML** (ESH) is available both as a CLI and a GUI. In both cases, first install Rust and ESH:
+**Encrypt Static HTML** (ESH) is available both as a CLI (i.e., you type commands in a terminal) and a GUI (i.e., a window with some buttons). In both cases, first install Rust and ESH:
 
-Install Rustup at <https://www.rust-lang.org/tools/install> and make sure Cargo's bin is in your PATH. For example, on linux:
+**1.** Install Rustup at <https://www.rust-lang.org/tools/install>. For example:
 
 ```shell
+# Install Rust on Linux or MacOs
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+```
+
+**2. (optional)** Add Cargo's bin to your PATH. Instructions should be printed when running the previous command. For example:
+
+```shell
+# Add Cargo's bin to the PATH on Linux
 export PATH=$PATH:/home/$USER/.cargo/bin/
 ```
 
-Then, install and run `encrypt_static_html`.
+**3.** Install and run `encrypt_static_html`.
 
 ```shell
 cargo install --git https://github.com/achoum/encrypt_static_html
@@ -40,7 +48,7 @@ encrypt_static_html_ui
 
 **Note:** The GUI exposes a subset of the options of the CLI.
 
-## Help
+## CLI Help
 
 ```shell
 > cargo run -- --help
