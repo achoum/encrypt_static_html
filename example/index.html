@@ -1,6 +1,10 @@
 <html>
-<title>Encrypt Static Html Example</title>
-<link rel="stylesheet" href="styles.css">
+
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Encrypt Static Html Example</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
 
 <body>
     <p>Some text.</p>
@@ -9,8 +13,13 @@
     <p>Local images are embedded:
         <img src="image.png">
     </p>
+
     <p>Remote images are not embedded:
         <img src="https://blog.mathieu.guillame-bert.com/3_ml_1/iris_with_labels.jpg">
+    </p>
+
+    <p>Open image<br>
+        <img src="image.png" width="64" alt="Clickable Image" data-encrypt-enlarge>
     </p>
 
 </body>

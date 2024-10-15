@@ -1,6 +1,6 @@
 [package]
 name = "encrypt_static_html"
-version = "0.2.0"
+version = "0.3.0"
 authors = ["Mathieu Guillame-Bert <achoum@gmail.com>"]
 edition = "2021"
 description = "A tool for encrypting a static HTML page, including its images and CSS, allowing for the page to be hosted securely on a static web server."

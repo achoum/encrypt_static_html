@@ -56,6 +56,7 @@
         return dec.decode(decrypted);
     }
 
+
     document.addEventListener('DOMContentLoaded', async () => {
         const password = prompt('{{message}}', '');
         if (password == null) {
@@ -74,6 +75,33 @@
             document.querySelector('html').innerHTML = 'The password is incorrect.';
         }
     });
+
+    function showImage(image_data) {
+        console.log("Show image");
+        const overlay = document.createElement('div');
+        overlay.id = 'my_image_overlay';
+        overlay.style.position = 'fixed';
+        overlay.style.top = '0';
+        overlay.style.left = '0';
+        overlay.style.width = '100%';
+        overlay.style.height = '100%';
+        overlay.style.backgroundColor = 'rgba(0, 0, 0, 0.8)';
+        overlay.style.display = 'flex';
+        overlay.style.justifyContent = 'center';
+        overlay.style.alignItems = 'center';
+        overlay.style.zIndex = '1000';
+        const img = document.createElement('img');
+        img.src = image_data;
+        img.style.maxWidth = '90%';
+        img.style.maxHeight = '90%';
+        img.style.borderRadius = '8px';
+        overlay.appendChild(img);
+        document.body.appendChild(overlay);
+        overlay.addEventListener('click', function () {
+            document.body.removeChild(overlay);
+        });
+    }
+
 </script>
 
 <body>

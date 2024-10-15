@@ -12,6 +12,7 @@ use scraper::{Html, Selector};
 use serde_json::json;
 use sha2::Sha256;
 use std::error::Error;
+use std::fmt::Write;
 use std::fs;
 use std::path::Path;
 use std::str;
@@ -30,6 +31,7 @@ fn embede_html_content(src: &str, workdir: &Path) -> Result<String, Box<dyn Erro
                     eprintln!("Skip remote image: {src}");
                     continue;
                 }
+
                 eprintln!("Embbed local image: {src}");
                 let path = workdir.join(src);
                 let element_data =
@@ -37,7 +39,33 @@ fn embede_html_content(src: &str, workdir: &Path) -> Result<String, Box<dyn Erro
                 let mime_type =
                     infer::get(&element_data).map_or("image/png", |info| info.mime_type());
                 let base64_img = base64::engine::general_purpose::STANDARD.encode(&element_data);
-                let new_tag = format!(r#"<img src="data:{};base64,{}">"#, mime_type, base64_img);
+                let image_data = format!("data:{};base64,{}", mime_type, base64_img);
+
+                let mut raw_attributes = String::new();
+                for attr_name in [
+                    "width",
+                    "height",
+                    "alt",
+                    "onclick",
+                    "style",
+                    "data-encrypt-enlarge",
+                ] {
+                    if let Some(attr_value) = element.value().attr(attr_name) {
+                        if attr_name == "data-encrypt-enlarge" {
+                            write!(
+                                &mut raw_attributes,
+                                " style=\"cursor: pointer;\" onclick=\"showImage('{}')\"",
+                                image_data
+                            )
+                            .unwrap();
+                        } else {
+                            write!(&mut raw_attributes, " {}=\"{}\"", attr_name, attr_value)
+                                .unwrap();
+                        }
+                    }
+                }
+
+                let new_tag = format!(r#"<img src="{}" {}>"#, image_data, raw_attributes);
                 src_content = src_content.replacen(&element.html(), &new_tag, 1);
             }
         }
